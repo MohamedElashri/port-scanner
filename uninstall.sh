@@ -17,7 +17,7 @@ sudo systemctl daemon-reload
 sudo userdel -r port_scanner
 
 # Remove the setcap capability from Python
-sudo setcap -r $(which python3)
+sudo setcap -r "$(which python3)"
 
 # Remove the installation directory and its contents
 sudo rm -rf "$INSTALL_DIR"

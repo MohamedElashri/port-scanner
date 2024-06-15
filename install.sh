@@ -52,7 +52,18 @@ WantedBy=multi-user.target
 EOL
 
 # Move the generated service file to the systemd directory
-sudo mv port-scanner.service /etc/systemd/system/
+# Move the generated service file to the systemd directory
+if [ -f "/etc/systemd/system/port-scanner.service" ]; then
+    read -r -p "A service file with the same name already exists. Do you want to overwrite it? (y/n): " overwrite
+    if [ "$overwrite" == "y" ]; then
+        sudo mv port-scanner.service /etc/systemd/system/
+    else
+        echo "Installation aborted. Please manually remove or rename the existing service file."
+        exit 1
+    fi
+else
+    sudo mv port-scanner.service /etc/systemd/system/
+fi
 
 # Reload the systemd daemon
 sudo systemctl daemon-reload
