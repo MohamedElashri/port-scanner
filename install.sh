@@ -4,11 +4,17 @@
 INSTALL_DIR="/opt/port-scanner"
 
 # Create the installation directory
-sudo mkdir -p "$INSTALL_DIR"
+if [ ! -d "$INSTALL_DIR" ]; then
+    sudo mkdir -p "$INSTALL_DIR"
+fi
 
 # Create a virtual environment
-python3 -m venv "$INSTALL_DIR/venv"
-source "$INSTALL_DIR/venv/bin/activate"
+if [ -d "$INSTALL_DIR/venv" ]; then
+    source "$INSTALL_DIR/venv/bin/activate"
+else
+    python3 -m venv "$INSTALL_DIR/venv"
+    source "$INSTALL_DIR/venv/bin/activate"
+fi
 
 # Install dependencies
 pip install -r requirements.txt
@@ -17,7 +23,9 @@ pip install -r requirements.txt
 cp port_scanner.py "$INSTALL_DIR/"
 
 # Create a dedicated user for running the service
-sudo useradd -m -s /bin/false port_scanner
+if ! id -u port_scanner > /dev/null 2>&1; then
+    sudo useradd -m -s /bin/false port_scanner
+fi
 
 # Grant necessary permissions to the port_scanner user
 sudo usermod -aG docker port_scanner
