@@ -1,0 +1,6 @@
+prettytable
+colorama
+python-telegram-bot
+requests
+schedule
+python-dotenv
