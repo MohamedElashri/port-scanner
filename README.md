@@ -76,6 +76,16 @@ You can customize the scanning behavior by modifying the relevant variables in t
 - `PORTS_TO_SCAN`: Specify the ports to scan (comma-separated). Leave empty to scan all ports.
 - `PORTS_TO_SKIP`: Specify the ports to skip (comma-separated).
 
+## Uninstallation
+
+To uninstall the Port Scanner Service, run the uninstallation script:
+```
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+The script will stop the service, remove the systemd unit file, delete the dedicated user, and remove the virtual environment.
+
 ## Logs
 
 The script logs interesting events and timestamps to the log file located at `/var/log/port-scan.log`. You can view the logs using a command like:
