@@ -21,7 +21,12 @@ sudo useradd -m -s /bin/false port_scanner
 
 # Grant necessary permissions to the port_scanner user
 sudo usermod -aG docker port_scanner
-sudo setcap 'cap_net_raw,cap_net_admin+eip' "$(which python3)"
+
+# Find the actual Python executable path
+PYTHON_EXEC=$(readlink -f "$(which python3)")
+
+# Set capabilities on the actual Python executable
+sudo setcap 'cap_net_raw,cap_net_admin+eip' "$PYTHON_EXEC"
 
 # Generate the systemd service file
 cat > port-scanner.service <<EOL
