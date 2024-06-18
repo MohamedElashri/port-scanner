@@ -1,18 +1,18 @@
-import os
 import subprocess
+import os
+import socket
+import requests
+import smtplib
 import prettytable
 from colorama import Fore, Style
 import telegram
 from telegram.ext import Updater, CommandHandler
-import socket
-import requests
-import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import schedule
-import time
 import logging
 from logging.handlers import RotatingFileHandler
+import schedule
+import time
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -42,6 +42,15 @@ SCAN_SCHEDULE = os.getenv('SCAN_SCHEDULE', 'hourly')
 PORTS_TO_SCAN = os.getenv('PORTS_TO_SCAN', '').split(',')
 PORTS_TO_SKIP = os.getenv('PORTS_TO_SKIP', '').split(',')
 
+def is_docker_installed():
+    try:
+        subprocess.check_output(['docker', 'info'], stderr=subprocess.STDOUT)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    except FileNotFoundError:
+        return False
+
 def get_hostname():
     return socket.gethostname()
 
@@ -57,18 +66,17 @@ def scan_ports():
     open_ports = []
     docker_ports = set()
 
-    # Get Docker container open ports
-    try:
-        output = subprocess.check_output(['docker', 'ps', '--format', '{{.Ports}}'])
-        docker_output = output.decode('utf-8').strip().split('\n')
-        for line in docker_output:
-            ports = line.split('->')
-            if len(ports) > 1:
-                docker_ports.add(ports[0].split(':')[1])
-    except subprocess.CalledProcessError:
-        pass
+    if is_docker_installed():
+        try:
+            output = subprocess.check_output(['docker', 'ps', '--format', '{{.Ports}}'])
+            docker_output = output.decode('utf-8').strip().split('\n')
+            for line in docker_output:
+                ports = line.split('->')
+                if len(ports) > 1:
+                    docker_ports.add(ports[0].split(':')[1])
+        except subprocess.CalledProcessError:
+            pass
 
-    # Scan for open ports
     for port in range(1, 65536):
         if PORTS_TO_SCAN and str(port) not in PORTS_TO_SCAN:
             continue
@@ -86,10 +94,8 @@ def create_table(open_ports):
     table = prettytable.PrettyTable()
     table.field_names = ['Port', 'Service']
     for port, service in open_ports:
-        if port in [80, 443]:
-            table.add_row([Fore.GREEN + str(port) + Style.RESET_ALL, service])
-        else:
-            table.add_row([Fore.RED + str(port) + Style.RESET_ALL, service])
+        color = Fore.GREEN if port in [80, 443] else Fore.RED
+        table.add_row([color + str(port) + Style.RESET_ALL, service])
     return table
 
 def send_telegram_message(message):
@@ -127,10 +133,10 @@ def scan_and_notify():
 
     non_standard_ports = [port for port, _ in open_ports if port not in [80, 443]]
     if non_standard_ports:
-        insult = f"Hey dummy, why do you have these weird ports open on {hostname} ({external_ip}): {', '.join(map(str, non_standard_ports))}? Are you trying to invite hackers to your party? 🤡"
-        logging.warning(insult)
-        send_telegram_message(insult)
-        send_email_notification('Open Ports Detected', insult)
+        message = f"Hey, check out these non-standard ports open on {hostname} ({external_ip}): {', '.join(map(str, non_standard_ports))}."
+        logging.warning(message)
+        send_telegram_message(message)
+        send_email_notification('Open Ports Detected', message)
 
 def scheduled_scan():
     logging.info('Starting scheduled port scan')
